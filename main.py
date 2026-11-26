@@ -14,7 +14,7 @@ from email.header import Header
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from email.utils import formataddr
+from email.utils import formataddr, formatdate, make_msgid
 import html
 import io
 import math
@@ -766,7 +766,7 @@ def generate_market_ticker_gif(
 
     frames: list[Image.Image] = []
     durations: list[int] = []
-    total_frames = 28
+    total_frames = 22
 
     for idx in range(total_frames):
         canvas = Image.new("RGBA", (width, height), bg_rgb + (255,))
@@ -853,18 +853,18 @@ def generate_market_ticker_gif(
             else:
                 canvas.alpha_composite(tile_img, (tx, tile_y))
 
-        # 階段 2（影格 15~25）：柔和暖金色斜向流光掃過三張數據卡
-        if 15 <= idx <= 25:
-            progress = (idx - 15) / 10.0
+        # 階段 2（影格 14~19）：柔和暖金色斜向流光掃過三張數據卡（精簡影格以降低信件體積）
+        if 14 <= idx <= 19:
+            progress = (idx - 14) / 5.0
             beam_x = int(-140 + progress * (width + 280))
             sheen = Image.new("RGBA", (width, height), (0, 0, 0, 0))
             s_draw = ImageDraw.Draw(sheen)
             s_draw.polygon(
                 [
                     (beam_x, tile_y),
-                    (beam_x + 72, tile_y),
-                    (beam_x + 22, tile_y + tile_h),
-                    (beam_x - 50, tile_y + tile_h),
+                    (beam_x + 76, tile_y),
+                    (beam_x + 24, tile_y + tile_h),
+                    (beam_x - 52, tile_y + tile_h),
                 ],
                 fill=(239, 217, 166, 28),
             )
@@ -875,11 +875,11 @@ def generate_market_ticker_gif(
         quantized = rgb_frame.convert("P", palette=Image.Palette.ADAPTIVE, colors=256)
         frames.append(quantized)
 
-        if idx < 15:
+        if idx < 14:
             durations.append(75)
-        elif idx <= 25:
-            durations.append(85)
-        elif idx == 26:
+        elif idx <= 19:
+            durations.append(95)
+        elif idx == 20:
             durations.append(1800)
         else:
             durations.append(550)
@@ -1074,21 +1074,23 @@ def render_email_html(
 
     sources_section = ""
     if sources:
-        items_html = "\n".join(
-            f'<li style="margin: 0 0 6px 0; font-size: 13px; line-height: 1.5; color: #D8CEB8;">'
-            f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener noreferrer" '
-            f'style="color: #DFC388; text-decoration: none;">{html.escape(title)}</a></li>'
-            for title, url in sources
+        # 避免在信件內放入大量 Google 轉址連結而觸發 Gmail 垃圾郵件濾網，改以英倫燙金來源標籤呈現
+        unique_titles = list(dict.fromkeys(title for title, _ in sources))
+        tags_html = "\n".join(
+            f'<span style="display: inline-block; margin: 0 6px 6px 0; padding: 3px 9px; '
+            f'background-color: #0B3547; border: 1px solid #8F7443; border-radius: 4px; '
+            f'font-size: 12px; color: #DFC388;">{html.escape(title)}</span>'
+            for title in unique_titles
         )
         sources_section = f"""
         <div style="margin-top: 26px; padding: 14px 16px; background-color: #082836; border: 1px solid #8F7443; border-radius: 8px;">
           <div style="margin-bottom: 10px;">
             <span style="display: inline-block; background-color: #C8A86B; color: #082836; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; padding: 2px 7px; border-radius: 3px; vertical-align: middle; margin-right: 8px;">SOURCES</span>
-            <span style="font-family: Georgia, 'Noto Serif TC', serif; font-size: 13px; font-weight: 700; color: #DFC388; letter-spacing: 0.05em; vertical-align: middle;">即時新聞參考來源（Google Search Grounding）</span>
+            <span style="font-family: Georgia, 'Noto Serif TC', serif; font-size: 13px; font-weight: 700; color: #DFC388; letter-spacing: 0.05em; vertical-align: middle;">即時新聞查證來源（Google Search Grounding）</span>
           </div>
-          <ul style="margin: 0; padding-left: 18px;">
-            {items_html}
-          </ul>
+          <div style="line-height: 1.6;">
+            {tags_html}
+          </div>
         </div>
         """
 
@@ -1621,12 +1623,11 @@ def render_interactive_flip_page(
 
 
 def build_plain_text(report_md: str, sources: list[tuple[str, str]]) -> str:
-    """建立純文字備援版本，供不支援 HTML 的信箱顯示。"""
+    """建立純文字備援版本，供不支援 HTML 的信箱顯示（避免塞入大量轉址網址觸發垃圾信濾網）。"""
     lines = [report_md]
     if sources:
-        lines.append("\n---\n即時新聞參考來源：")
-        for title, url in sources:
-            lines.append(f"- {title}: {url}")
+        unique_titles = list(dict.fromkeys(title for title, _ in sources))
+        lines.append("\n---\n即時新聞查證來源：" + " / ".join(unique_titles))
     lines.append(
         "\n---\n免責聲明：本早報由 AI 結合即時搜尋整理，僅供市場資訊參考，不構成任何投資建議。"
     )
@@ -1650,6 +1651,10 @@ def send_gmail_bcc(
     msg["From"] = formataddr((str(Header("快樂猛男台股機器人", "utf-8")), sender_email))
     # To 僅填寄件者自身，不將訂閱名單寫入 To/Cc/Bcc 標頭，確保彼此完全看不到對方信箱
     msg["To"] = formataddr((str(Header("早報訂閱貴賓", "utf-8")), sender_email))
+    msg["Reply-To"] = sender_email
+    # 補齊標準 RFC 5322 標頭（Date / Message-ID），大幅降低被判為垃圾郵件的機率
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain="gmail.com")
 
     alt = MIMEMultipart("alternative")
     alt.attach(MIMEText(plain_text, "plain", "utf-8"))
@@ -1659,9 +1664,11 @@ def send_gmail_bcc(
     for cid, gif_bytes in (inline_gifs or {}).items():
         if not gif_bytes:
             continue
-        img_part = MIMEImage(gif_bytes, _subtype="gif")
+        filename = f"{cid}.gif"
+        img_part = MIMEImage(gif_bytes, _subtype="gif", name=filename)
         img_part.add_header("Content-ID", f"<{cid}>")
-        img_part.add_header("Content-Disposition", "inline", filename=f"{cid}.gif")
+        img_part.add_header("X-Attachment-Id", cid)
+        img_part.add_header("Content-Disposition", "inline", filename=filename)
         msg.attach(img_part)
 
     context = ssl.create_default_context()
