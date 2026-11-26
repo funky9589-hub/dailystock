@@ -10,10 +10,7 @@ from __future__ import annotations
 import argparse
 import base64
 from datetime import datetime, timedelta, timezone
-from email.header import Header
-from email.mime.image import MIMEImage
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+from email.message import EmailMessage
 from email.utils import formataddr, formatdate, make_msgid
 import html
 import io
@@ -1659,43 +1656,48 @@ def send_gmail_bcc(
     html_content: str,
     inline_gifs: dict[str, bytes] | None = None,
 ) -> None:
-    """透過 Gmail SMTP SSL (Port 465) 以 Bcc 密件副本發送含內嵌動態圖卡的 HTML 電子報。"""
+    """透過 Gmail SMTP SSL (Port 465) 逐一獨立寄送給每位訂閱者。
+
+    使用 Python 標準 EmailMessage 建立符合 RFC 與 Gmail 手機 App 規範的
+    multipart/alternative -> multipart/related 內嵌圖結構，並以獨立 To 寄送
+    保護所有訂閱者彼此隱私，同時避免 From==To Bcc 觸發垃圾郵件濾網。
+    """
     sender_email = config["sender_email"]
     app_password = config["gmail_app_password"]
     recipients: list[str] = config["recipients"]
 
-    msg = MIMEMultipart("related")
-    msg["Subject"] = str(Header(subject, "utf-8"))
-    msg["From"] = formataddr((str(Header("快樂猛男台股機器人", "utf-8")), sender_email))
-    # To 僅填寄件者自身，不將訂閱名單寫入 To/Cc/Bcc 標頭，確保彼此完全看不到對方信箱
-    msg["To"] = formataddr((str(Header("早報訂閱貴賓", "utf-8")), sender_email))
-    msg["Reply-To"] = sender_email
-    # 補齊標準 RFC 5322 標頭（Date / Message-ID），大幅降低被判為垃圾郵件的機率
-    msg["Date"] = formatdate(localtime=True)
-    msg["Message-ID"] = make_msgid(domain="gmail.com")
-
-    alt = MIMEMultipart("alternative")
-    alt.attach(MIMEText(plain_text, "plain", "utf-8"))
-    alt.attach(MIMEText(html_content, "html", "utf-8"))
-    msg.attach(alt)
-
-    for cid, gif_bytes in (inline_gifs or {}).items():
-        if not gif_bytes:
-            continue
-        filename = f"{cid}.gif"
-        img_part = MIMEImage(gif_bytes, _subtype="gif", name=filename)
-        img_part.add_header("Content-ID", f"<{cid}>")
-        img_part.add_header("X-Attachment-Id", cid)
-        img_part.add_header("Content-Disposition", "inline", filename=filename)
-        msg.attach(img_part)
-
     context = ssl.create_default_context()
-    print(f"📨 正在連線 {SMTP_HOST}:{SMTP_PORT} (SSL)，以 Bcc 發送給 {len(recipients)} 位訂閱者...")
+    print(f"📨 正在連線 {SMTP_HOST}:{SMTP_PORT} (SSL)，逐一獨立發送給 {len(recipients)} 位訂閱者（保護彼此隱私）...")
 
     with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context, timeout=30) as server:
         server.login(sender_email, app_password)
-        # 透過 SMTP envelope 傳入所有收件人，達到真正的 Bcc 密件副本效果
-        server.sendmail(sender_email, recipients, msg.as_string())
+
+        for recipient in recipients:
+            msg = EmailMessage()
+            msg["Subject"] = subject
+            msg["From"] = formataddr(("快樂猛男台股機器人", sender_email))
+            msg["To"] = recipient
+            msg["Reply-To"] = sender_email
+            msg["Date"] = formatdate(localtime=True)
+            msg["Message-ID"] = make_msgid(domain="gmail.com")
+
+            msg.set_content(plain_text)
+            msg.add_alternative(html_content, subtype="html")
+            html_part = msg.get_payload()[1]
+
+            for cid, gif_bytes in (inline_gifs or {}).items():
+                if not gif_bytes:
+                    continue
+                html_part.add_related(
+                    gif_bytes,
+                    maintype="image",
+                    subtype="gif",
+                    cid=f"<{cid}>",
+                    filename=f"{cid}.gif",
+                    disposition="inline",
+                )
+
+            server.send_message(msg, from_addr=sender_email, to_addrs=[recipient])
 
     print(f"✅ 電子報已成功寄出！（標題：{subject}，訂閱者共 {len(recipients)} 位）")
 
