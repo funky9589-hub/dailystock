@@ -23,6 +23,7 @@ import ssl
 import sys
 import time
 from typing import Any
+import uuid
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from dotenv import load_dotenv
@@ -1675,11 +1676,13 @@ def send_gmail_bcc(
         for recipient in recipients:
             msg = EmailMessage()
             msg["Subject"] = subject
-            msg["From"] = formataddr(("快樂猛男台股機器人", sender_email))
+            msg["From"] = formataddr(("快樂猛男台股早報", sender_email))
             msg["To"] = recipient
             msg["Reply-To"] = sender_email
             msg["Date"] = formatdate(localtime=True)
             msg["Message-ID"] = make_msgid(domain="gmail.com")
+            # Gmail 官方防合併對話標頭：確保即使同日重複寄信也不會被摺疊在同一串訊息中
+            msg["X-Entity-Ref-ID"] = uuid.uuid4().hex
 
             msg.set_content(plain_text)
             msg.add_alternative(html_content, subtype="html")
