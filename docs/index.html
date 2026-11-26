@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>【英倫互動翻牌版】2026/11/26 盤前暖男台股財報</title>
+  <style>
+    :root {
+      --bg-deep: #06212C;
+      --bg-main: #0B3547;
+      --bg-panel: #082836;
+      --gold: #C8A86B;
+      --gold-hi: #DFC388;
+      --gold-dim: #8F7443;
+      --cream: #F3EBD8;
+      --up: #FF8585;
+      --up-bar: #D94655;
+      --down: #6EE7B7;
+      --down-bar: #2E9B6E;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 20px 12px 48px;
+      background: radial-gradient(circle at top, #0E4156 0%, var(--bg-deep) 65%);
+      color: var(--cream);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+    }
+    .wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--bg-main);
+      border: 2px solid var(--gold);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 18px 46px rgba(0, 0, 0, 0.45);
+    }
+    header {
+      background: var(--bg-panel);
+      padding: 28px 24px 22px;
+      text-align: center;
+      border-bottom: 1px solid rgba(200, 168, 107, 0.35);
+    }
+    .kicker {
+      font-family: Georgia, serif;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      color: var(--gold);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    h1 {
+      margin: 0;
+      font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif;
+      font-size: 26px;
+      letter-spacing: 0.15em;
+      color: var(--gold-hi);
+    }
+    .gold-rule {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 14px 0 10px;
+      color: var(--gold-hi);
+      font-size: 11px;
+    }
+    .gold-rule::before, .gold-rule::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .focus-sub {
+      font-size: 13px;
+      color: #D8CEB8;
+      letter-spacing: 0.08em;
+    }
+    .interactive-zone {
+      padding: 22px 24px 8px;
+      background: linear-gradient(180deg, #092D3C 0%, var(--bg-main) 100%);
+    }
+    .zone-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .zone-title {
+      font-family: Georgia, 'Noto Serif TC', serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--gold-hi);
+    }
+    .zone-title small {
+      display: block;
+      font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      color: #B7C7CE;
+      letter-spacing: 0.03em;
+      margin-top: 2px;
+    }
+    .btn-gold {
+      background: transparent;
+      color: var(--gold-hi);
+      border: 1px solid var(--gold);
+      border-radius: 4px;
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, transform 0.15s;
+    }
+    .btn-gold:hover {
+      background: var(--gold);
+      color: var(--bg-panel);
+    }
+    .btn-gold:active { transform: scale(0.97); }
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 600px) {
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+    .flip-card {
+      perspective: 1100px;
+      height: 168px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .flip-card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.68s cubic-bezier(0.22, 1, 0.36, 1);
+      transform-style: preserve-3d;
+    }
+    .flip-card.is-flipped .flip-card-inner {
+      transform: rotateY(180deg);
+    }
+    .flip-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 10px;
+      border: 1.5px solid var(--gold);
+      background: var(--bg-panel);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: inset 0 0 0 4px rgba(11, 53, 71, 0.9), inset 0 0 0 5px rgba(200, 168, 107, 0.35);
+    }
+    .flip-back {
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: radial-gradient(circle at center, #0F4054 0%, #072330 100%);
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    .flip-card:hover .flip-back {
+      border-color: var(--gold-hi);
+      box-shadow: 0 0 20px rgba(200, 168, 107, 0.28), inset 0 0 0 4px rgba(11, 53, 71, 0.9), inset 0 0 0 5px rgba(223, 195, 136, 0.55);
+    }
+    .back-symbol {
+      font-family: Georgia, serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--gold-hi);
+    }
+    .back-sub {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--gold);
+      margin-top: 4px;
+    }
+    .back-divider {
+      width: 70%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+      color: var(--gold);
+      font-size: 10px;
+    }
+    .back-divider::before, .back-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--gold-dim);
+    }
+    .back-hint {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: #D8CEB8;
+      opacity: 0.9;
+    }
+    .flip-front {
+      transform: rotateY(180deg);
+    }
+    .front-bar {
+      height: 3px;
+      border-radius: 2px;
+      background: var(--gold);
+      margin-bottom: 6px;
+    }
+    .flip-front.up .front-bar { background: var(--up-bar); }
+    .flip-front.down .front-bar { background: var(--down-bar); }
+    .front-top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+    .front-symbol {
+      font-family: Georgia, serif;
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--gold-hi);
+      letter-spacing: 0.06em;
+    }
+    .front-sub {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gold-hi);
+      letter-spacing: 0.06em;
+    }
+    .front-price {
+      font-size: 28px;
+      font-weight: 800;
+      color: #FAF6EE;
+      letter-spacing: 0.02em;
+      margin: 6px 0;
+    }
+    .front-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 700;
+      border: 1px solid rgba(200, 168, 107, 0.35);
+      background: #103A4A;
+      color: var(--gold-hi);
+    }
+    .front-pill.up { background: #441922; color: var(--up); }
+    .front-pill.down { background: #103830; color: var(--down); }
+    main {
+      padding: 16px 26px 28px;
+    }
+    .sources-box {
+      margin-top: 26px;
+      padding: 14px 16px;
+      background: var(--bg-panel);
+      border: 1px solid var(--gold-dim);
+      border-radius: 8px;
+    }
+    .sources-title {
+      font-family: Georgia, 'Noto Serif TC', serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold-hi);
+      margin-bottom: 10px;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--bg-panel);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      padding: 2px 7px;
+      border-radius: 3px;
+      margin-right: 8px;
+    }
+    .sources-box ul { margin: 0; padding-left: 18px; }
+    .sources-box li { margin-bottom: 6px; font-size: 13px; }
+    .sources-box a { color: var(--gold-hi); text-decoration: none; }
+    .sources-box a:hover { text-decoration: underline; }
+    footer {
+      padding: 16px 24px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--gold);
+      font-size: 12px;
+      line-height: 1.65;
+      color: #9EB5BF;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="kicker">PRE-MARKET INTELLIGENCE · 2026/11/26 (週四)</div>
+      <h1>盤前暖男台股財報</h1>
+      <div class="gold-rule"><span>◆</span></div>
+      <div class="focus-sub">焦點主軸：台股與美股連動 · 收盤基準 2026/11/25</div>
+    </header>
+
+    <section class="interactive-zone">
+      <div class="zone-header">
+        <div class="zone-title">
+          ◆ 美股收盤親手翻牌區
+          <small>點擊單張燙金牌卡揭曉最新數據，或按右側一鍵全翻</small>
+        </div>
+        <button id="toggleAllBtn" class="btn-gold" type="button">一鍵全部翻牌</button>
+      </div>
+      <div class="cards-grid">
+        
+        <div class="flip-card" data-index="0" role="button" tabindex="0" aria-pressed="false" aria-label="翻牌查看 SOX">
+          <div class="flip-card-inner">
+            <div class="flip-face flip-back">
+              <div class="back-symbol">SOX</div>
+              <div class="back-sub">PHLX SEMI</div>
+              <div class="back-divider"><span>◆</span></div>
+              <div class="back-hint">點擊翻牌 · TAP TO FLIP</div>
+            </div>
+            <div class="flip-face flip-front down">
+              <div class="front-bar"></div>
+              <div class="front-top">
+                <span class="front-symbol">SOX</span>
+                <span class="front-sub">PHLX SEMI</span>
+              </div>
+              <div class="front-price">8,774.86</div>
+              <div class="front-pill down">
+                <span class="pill-arrow">▼</span>
+                <span>-0.65%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+
+        <div class="flip-card" data-index="1" role="button" tabindex="0" aria-pressed="false" aria-label="翻牌查看 NVDA">
+          <div class="flip-card-inner">
+            <div class="flip-face flip-back">
+              <div class="back-symbol">NVDA</div>
+              <div class="back-sub">NVIDIA</div>
+              <div class="back-divider"><span>◆</span></div>
+              <div class="back-hint">點擊翻牌 · TAP TO FLIP</div>
+            </div>
+            <div class="flip-face flip-front down">
+              <div class="front-bar"></div>
+              <div class="front-top">
+                <span class="front-symbol">NVDA</span>
+                <span class="front-sub">NVIDIA</span>
+              </div>
+              <div class="front-price">$149.30</div>
+              <div class="front-pill down">
+                <span class="pill-arrow">▼</span>
+                <span>-3.91%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+
+        <div class="flip-card" data-index="2" role="button" tabindex="0" aria-pressed="false" aria-label="翻牌查看 TSM">
+          <div class="flip-card-inner">
+            <div class="flip-face flip-back">
+              <div class="back-symbol">TSM</div>
+              <div class="back-sub">TSMC ADR</div>
+              <div class="back-divider"><span>◆</span></div>
+              <div class="back-hint">點擊翻牌 · TAP TO FLIP</div>
+            </div>
+            <div class="flip-face flip-front down">
+              <div class="front-bar"></div>
+              <div class="front-top">
+                <span class="front-symbol">TSM</span>
+                <span class="front-sub">TSMC ADR</span>
+              </div>
+              <div class="front-price">$342.34</div>
+              <div class="front-pill down">
+                <span class="pill-arrow">▼</span>
+                <span>-1.96%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </section>
+
+    <main>
+      <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.75; color: #F3EBD8;">早安，台股昨晚洗三溫暖，今日準備接招！</p>
+<blockquote style="margin: 14px 0 22px 0; padding: 15px 18px; background-color: #082836; border: 1px solid #C8A86B; border-left: 4px solid #DFC388; border-radius: 6px; color: #F3EBD8;">
+<p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.75; color: #F3EBD8;"><span style="display: inline-block; background-color: #C8A86B; color: #082836; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; padding: 3px 9px; border-radius: 3px; vertical-align: middle; margin-right: 9px;">FOCUS</span><strong style="font-family: Georgia, 'Noto Serif TC', serif; font-size: 16px; color: #DFC388; letter-spacing: 0.08em; vertical-align: middle;">今日必盯題材</strong><br />
+1. <strong style="color: #DFC388; font-weight: 700;">AI散熱</strong>：<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3653 健策</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3017 奇鋐</code><br />
+2. <strong style="color: #DFC388; font-weight: 700;">低軌衛星</strong>：<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3701 大眾控</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">6285 啟碁</code><br />
+3. <strong style="color: #DFC388; font-weight: 700;">被動元件</strong>：<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">2327 國巨</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">2492 華新科</code></p>
+</blockquote>
+<h2 style="margin: 26px 0 12px 0; padding: 0 0 8px 0; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 19px; line-height: 1.4; color: #DFC388; font-weight: 700; letter-spacing: 0.08em;"><span style="color: #C8A86B; font-size: 13px; margin-right: 8px;">◆</span>今日政經關鍵風向</h2>
+<table style="width: 100%; border-collapse: collapse; margin: 12px 0 16px 0; font-size: 14px; line-height: 1.55; background-color: #082836;">
+<thead>
+<tr>
+<th style="background-color: #07222E; color: #DFC388; text-align: left; padding: 8px 10px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.06em;">指標</th>
+<th style="background-color: #07222E; color: #DFC388; text-align: left; padding: 8px 10px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.06em; text-align: right;">收盤 (2026/11/25)</th>
+<th style="background-color: #07222E; color: #DFC388; text-align: left; padding: 8px 10px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.06em; text-align: right;">漲跌</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">費半 (SOX)</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">8,774.86</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #6EE7B7; font-weight: 700;">▼ -0.65%</span></td>
+</tr>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">輝達 (NVDA)</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">149.30</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #6EE7B7; font-weight: 700;">▼ -3.91%</span></td>
+</tr>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">台積電 ADR (TSM)</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">342.34</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #6EE7B7; font-weight: 700;">▼ -1.96%</span></td>
+</tr>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">道瓊</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">50,182.95</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #FF8585; font-weight: 700;">▲ +0.33%</span></td>
+</tr>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">那斯達克</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">23,585.80</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #6EE7B7; font-weight: 700;">▼ -0.62%</span></td>
+</tr>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">S&amp;P 500</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">7,182.78</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #6EE7B7; font-weight: 700;">▼ -0.25%</span></td>
+</tr>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">美股感恩節休市，此為2026/11/25收盤。</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"></td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"></td>
+</tr>
+</tbody>
+</table>
+<ul style="margin: 6px 0 14px 0; padding-left: 20px;">
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">利率/通膨</strong>：US 10月核心PCE <code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3.3%</code> <span style="color: #FF8585; font-weight: 700;">▲</span>｜Q3 GDP <code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">4.3%</code> <span style="color: #FF8585; font-weight: 700;">▲</span> → Fed 升息壓力 <span style="color: #FF8585; font-weight: 700;">▲</span></li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">關稅/政治</strong>：美擬對 14 國課稅｜台最高 <code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">15%</code> → 貿易戰風險 <span style="color: #FF8585; font-weight: 700;">▲</span></li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">台股籌碼</strong>：外資賣超 <code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">1,236 億</code> <span style="color: #6EE7B7; font-weight: 700;">▼</span>｜投信買超 <code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">535 億</code> <span style="color: #FF8585; font-weight: 700;">▲</span></li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">台指期夜盤</strong>：夜盤震盪 <code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">2190點</code> <span style="color: #6EE7B7; font-weight: 700;">▼</span>後翻紅 <code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">+274點</code> <span style="color: #FF8585; font-weight: 700;">▲</span> → 多空拉鋸劇烈</li>
+</ul>
+<h2 style="margin: 26px 0 12px 0; padding: 0 0 8px 0; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 19px; line-height: 1.4; color: #DFC388; font-weight: 700; letter-spacing: 0.08em;"><span style="color: #C8A86B; font-size: 13px; margin-right: 8px;">◆</span>今日必看 3 大題材與受惠股</h2>
+<h3 style="margin: 18px 0 8px 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 16px; line-height: 1.45; color: #D6B87A; font-weight: 700; letter-spacing: 0.04em;">題材 1：AI 散熱</h3>
+<ul style="margin: 6px 0 14px 0; padding-left: 20px;">
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">受惠股</strong>：<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3653 健策</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3017 奇鋐</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3324 雙鴻</code></li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">一句話邏輯</strong>：AI晶片功耗、封裝尺寸續升，帶動散熱規格升級，族群同步走強。</li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">盤前盯盤</strong>：留意成交量與漲勢延續性，能否在震盪中領漲。</li>
+</ul>
+<h3 style="margin: 18px 0 8px 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 16px; line-height: 1.45; color: #D6B87A; font-weight: 700; letter-spacing: 0.04em;">題材 2：低軌衛星</h3>
+<ul style="margin: 6px 0 14px 0; padding-left: 20px;">
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">受惠股</strong>：<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3701 大眾控</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">6285 啟碁</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">3491 昇達科</code></li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">一句話邏輯</strong>：馬斯克SpaceX獲FCC核准部署百萬顆衛星，激勵族群多檔漲停。</li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">盤前盯盤</strong>：觀察龍頭股能否續強，帶動其他衛星概念股表現。</li>
+</ul>
+<h3 style="margin: 18px 0 8px 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 16px; line-height: 1.45; color: #D6B87A; font-weight: 700; letter-spacing: 0.04em;">題材 3：被動元件</h3>
+<ul style="margin: 6px 0 14px 0; padding-left: 20px;">
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">受惠股</strong>：<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">2327 國巨</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">2492 華新科</code>、<code style="background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; padding: 2px 7px; border-radius: 4px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;">2472 立隆電</code></li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">一句話邏輯</strong>：族群展開強勢反攻，龍頭國巨攻漲停，具指標意義。</li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;"><strong style="color: #DFC388; font-weight: 700;">盤前盯盤</strong>：留意漲停股是否開高走高，避免利多出盡。</li>
+</ul>
+<h2 style="margin: 26px 0 12px 0; padding: 0 0 8px 0; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 19px; line-height: 1.4; color: #DFC388; font-weight: 700; letter-spacing: 0.08em;"><span style="color: #C8A86B; font-size: 13px; margin-right: 8px;">◆</span>潛在風險與避雷提示</h2>
+<ul style="margin: 6px 0 14px 0; padding-left: 20px;">
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;">外資連九賣超，台股摜破年線，短線追高要小心，多方信心待觀察。</li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;">美股盤中急殺後收斂，但AI股賣壓未止，留意台股AI鏈壓力。</li>
+<li style="margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;">美股感恩節休市，台股獨撐大局，波動恐加劇，操作務必嚴守紀律。</li>
+</ul>
+<h2 style="margin: 26px 0 12px 0; padding: 0 0 8px 0; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 19px; line-height: 1.4; color: #DFC388; font-weight: 700; letter-spacing: 0.08em;"><span style="color: #C8A86B; font-size: 13px; margin-right: 8px;">◆</span>今日重點關注三支股票</h2>
+        <div class="cards-grid" style="margin: 14px 0 18px;">
+          
+        <div class="flip-card" data-index="3" role="button" tabindex="0" aria-pressed="false" aria-label="翻牌查看 2330">
+          <div class="flip-card-inner">
+            <div class="flip-face flip-back">
+              <div class="back-symbol">2330</div>
+              <div class="back-sub">台積電</div>
+              <div class="back-divider"><span>◆</span></div>
+              <div class="back-hint">點擊翻牌 · TAP TO FLIP</div>
+            </div>
+            <div class="flip-face flip-front down">
+              <div class="front-bar"></div>
+              <div class="front-top">
+                <span class="front-symbol">2330</span>
+                <span class="front-sub">台積電</span>
+              </div>
+              <div class="front-price">NT$2,150.00</div>
+              <div class="front-pill down">
+                <span class="pill-arrow">▼</span>
+                <span>-3.58%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+
+        <div class="flip-card" data-index="4" role="button" tabindex="0" aria-pressed="false" aria-label="翻牌查看 2317">
+          <div class="flip-card-inner">
+            <div class="flip-face flip-back">
+              <div class="back-symbol">2317</div>
+              <div class="back-sub">鴻海</div>
+              <div class="back-divider"><span>◆</span></div>
+              <div class="back-hint">點擊翻牌 · TAP TO FLIP</div>
+            </div>
+            <div class="flip-face flip-front down">
+              <div class="front-bar"></div>
+              <div class="front-top">
+                <span class="front-symbol">2317</span>
+                <span class="front-sub">鴻海</span>
+              </div>
+              <div class="front-price">NT$206.50</div>
+              <div class="front-pill down">
+                <span class="pill-arrow">▼</span>
+                <span>-8.83%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+
+        <div class="flip-card" data-index="5" role="button" tabindex="0" aria-pressed="false" aria-label="翻牌查看 2382">
+          <div class="flip-card-inner">
+            <div class="flip-face flip-back">
+              <div class="back-symbol">2382</div>
+              <div class="back-sub">廣達</div>
+              <div class="back-divider"><span>◆</span></div>
+              <div class="back-hint">點擊翻牌 · TAP TO FLIP</div>
+            </div>
+            <div class="flip-face flip-front down">
+              <div class="front-bar"></div>
+              <div class="front-top">
+                <span class="front-symbol">2382</span>
+                <span class="front-sub">廣達</span>
+              </div>
+              <div class="front-price">NT$261.00</div>
+              <div class="front-pill down">
+                <span class="pill-arrow">▼</span>
+                <span>-7.61%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        </div>
+        
+<table style="width: 100%; border-collapse: collapse; margin: 12px 0 16px 0; font-size: 14px; line-height: 1.55; background-color: #082836;">
+<thead>
+<tr>
+<th style="background-color: #07222E; color: #DFC388; text-align: left; padding: 8px 10px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.06em;">代號</th>
+<th style="background-color: #07222E; color: #DFC388; text-align: left; padding: 8px 10px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.06em;">名稱</th>
+<th style="background-color: #07222E; color: #DFC388; text-align: left; padding: 8px 10px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.06em; text-align: right;">最新收盤 (2026/11/25)</th>
+<th style="background-color: #07222E; color: #DFC388; text-align: left; padding: 8px 10px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.06em; text-align: right;">漲跌</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">2330</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">台積電</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">2,150.00</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #6EE7B7; font-weight: 700;">▼ -3.58%</span></td>
+</tr>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">2317</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">鴻海</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">206.50</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #6EE7B7; font-weight: 700;">▼ -8.83%</span></td>
+</tr>
+<tr>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">2382</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;">廣達</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;">261.00</td>
+<td style="padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8; text-align: right;"><span style="color: #6EE7B7; font-weight: 700;">▼ -7.61%</span></td>
+</tr>
+</tbody>
+</table>
+      
+        <section class="sources-box">
+          <div class="sources-title"><span class="badge">SOURCES</span>即時新聞參考來源（Google Search Grounding）</div>
+          <ul><li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQGVqKtBORCZcaYBySuKtMXBBOpTAd2SXj8p_25i9y3gPfqPan--09pNFq3Og-9VTm0PoqEKWLNur0-07jGD-8DqiwVsKledrYxTBfhBfkYd7va-r6K19ptgkCK9kttgd2g_16Sgkmp2QBpCiS7K-7IRUg2u3U6YtaiIID9ZJJ6RDnoshhz64s0vbGFHazkQTHQu48aG_9kjT-J9WbScPiB4_E3v2--Mn8fBllkHav0hqn7HhpRMyYj3VcUc_0cmtPTktubruaIyYpr1PtGxKVHEBYgB7jDQ-VGsxl9hwSwFjXwVzXCX8GnEUePiqC8b8rytu0Ic8mXskvPDqEdxvlVa3t5540Ujwoaoig3KsjRO2LUlNmNoMiSXxthLcqY=" target="_blank" rel="noopener noreferrer">gliserland.com</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHUVi7I18NEwulhOPq0I4oFUui1Ij-CilvHNo55OAvhtkGrvRgcFKPmMWPzKHP6LqusxGTjradY9fOdBEIqXRpJtpHCgq-C-L3spsW4qMD0Fxepik85jLZeePRE9cTeAaDDRblbMibOTA==" target="_blank" rel="noopener noreferrer">time.is</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHabKBhGqfN5Y8x5YlLYxvj9mTe6XVLuXmR6k0tVDV_obUnusGwlPEhOAx140QIFOrKO44pcnLuggWtj05mGjGdJeO4w3MJQZjWmDs3rdwmI8CsSd1Rrp_dvnn5Ul5nrzefKKy0f2DNLGQS-GEZN-sLZ1N-Hss-UUfjvX_r" target="_blank" rel="noopener noreferrer">uscourts.gov</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQFcnZq9k83Ws2prBTjMbdCrUDB2m3KZZJE8ORQMqGqhsWQ_gVKO7Gp-bUJew-QwM49PmhaqDzta_qzUO7gjhWgdP5Er7n1cVYo3485uXPont3brvr3SVMOZdclemaS49bcxxcZ8qaGJYyPSgrRVbufVxembRKVoUrQfq2r453Ta7jaJqQLfo2vrgdvoXpx-AR1gfA==" target="_blank" rel="noopener noreferrer">ttv.com.tw</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQG57pPAoN9Vf3YwTTi_pKJoJ3qfaqWW8toTZwJLeF5AmAhOpuM9M8wi6l6Y1Xf9WkQMTGcRzNN_Wixm29AwsaZcYfweicKvmGlIQ88Px1WYqtsyGw0LmHnfdrembdIRRfa0JSCISpkU1K7yhJVkDqI_5sdXrPE=" target="_blank" rel="noopener noreferrer">holidays-calendar.net</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHaTQw5XEgGaOdB83fuLDmynCyj7K0EcSLuL--TjzDYt6IJqyJDfaDndwmloDKuC_-GgVxFBV5ECrvE26rgM14C2DhbF1P3QadoDB9_TJqZBVmNO3nK6-8nt4XZ7GxXVJQb-WFQAhbeDApZt2w=" target="_blank" rel="noopener noreferrer">ctee.com.tw</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHb0gTmL2ZpxnjlI0eUG8gHHBHPngiOceDFtLaUeejvWNFL1qv6WdqIi7wDQRcVIU0tYxh81Vdzyw7WaW0VRKBiKBLKyqc6eQxy_b4A5KN350tym0C5pTODySBBeKhPMLvhfzpxxgeIOxv2TBtCa5SJICaQfU4GRiNzwJkumxitS5obzzNBxWOuTfAu" target="_blank" rel="noopener noreferrer">money-link.com.tw</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQHfwhbnrMLsC_OXgOvxtfkGcHGXICySzjNGZJD19mIONkldS4GNUee6UFTLGIP_JlMTYns8gRqeZtaET8ZcHKTucTEtvnp5MaT89_5Akcd8MMrqu3Fr1sYM1hOPXkONsbCAuWlNTndGdRNEzHnuvBvQKD3YbSgGgjhUQK-4" target="_blank" rel="noopener noreferrer">maygoddejia.com.tw</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQEBw9xiyxqy4mOSMBh35nmagBvbwXWQnhJlAvHt8tmyJdlQ3EP1jt9a_IYF71VZfex2TU1F86APgMAGHcL58UoSusdp47YwUzAbMzBFF79gzr3ZmVstUKrlgbmpUpdps6QEIKf9EqPRv72h" target="_blank" rel="noopener noreferrer">udn.com</a></li>
+<li><a href="https://vertexaisearch.cloud.google.com/grounding-api-redirect/AUZIYQH7t73ekUJEGbWdfibidcTCmO4pf1bUwlqNpoqr-xKLg_F1RI41F1hHZHxHOP9W3RTllCV8Wwb1jZnBqqBihK1fjryzlGyS3NDUVVV3y4Ns-8FJ1qICf_NXcJ4FsHMeWhQLL7Rk9uqYCFbt_yzvyycpfe2D35l21LtWEQfZ" target="_blank" rel="noopener noreferrer">abmedia.io</a></li></ul>
+        </section>
+        
+    </main>
+
+    <footer>
+      <p style="margin: 0 0 6px; color: #D8CEB8;">
+        <strong style="color: #DFC388;">免責聲明：</strong>本電子報由 AI 結合即時網路搜尋整理而成，僅供市場政經資訊與題材研究參考，不構成任何買賣或投資建議。
+      </p>
+      <p style="margin: 0;">產生時間：2026/11/26 22:33 (台灣時間) · 英倫 3D 互動翻牌版</p>
+    </footer>
+  </div>
+
+  <script>
+    const cards = Array.from(document.querySelectorAll('.flip-card'));
+    const toggleBtn = document.getElementById('toggleAllBtn');
+
+    function syncButtonLabel() {
+      const allFlipped = cards.length > 0 && cards.every(c => c.classList.contains('is-flipped'));
+      toggleBtn.textContent = allFlipped ? '全部蓋牌重抽' : '一鍵全部翻牌';
+    }
+
+    function toggleCard(card) {
+      const flipped = card.classList.toggle('is-flipped');
+      card.setAttribute('aria-pressed', String(flipped));
+      syncButtonLabel();
+    }
+
+    cards.forEach(card => {
+      card.addEventListener('click', () => toggleCard(card));
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          toggleCard(card);
+        }
+      });
+    });
+
+    toggleBtn.addEventListener('click', () => {
+      const allFlipped = cards.every(c => c.classList.contains('is-flipped'));
+      cards.forEach((card, i) => {
+        setTimeout(() => {
+          card.classList.toggle('is-flipped', !allFlipped);
+          card.setAttribute('aria-pressed', String(!allFlipped));
+          syncButtonLabel();
+        }, i * 110);
+      });
+    });
+  </script>
+</body>
+</html>

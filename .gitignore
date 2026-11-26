@@ -1,0 +1,16 @@
+# Environment secrets (NEVER commit .env to GitHub)
+.env
+.env.local
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Preview / logs
+preview_report.html
+*.log
+.DS_Store
