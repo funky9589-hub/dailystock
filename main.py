@@ -915,47 +915,52 @@ def generate_market_ticker_gif(
 
 
 def _inject_inline_styles(html_body: str) -> str:
-    """為 HTML 元素套用英倫孔雀深藍綠 × 香檳燙金 inline style，確保各家信箱排版一致。"""
+    """為 HTML 元素套用英倫孔雀深藍綠 × 香檳燙金 inline style（含手機 Gmail 深色模式鎖色與不斷行優化）。"""
     tag_styles = {
         "h2": (
-            "margin: 26px 0 12px 0; padding: 0 0 8px 0; "
+            "margin: 24px 0 12px 0; padding: 0 0 8px 0; "
             "border-bottom: 1px solid #C8A86B; "
             "font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; "
-            "font-size: 19px; line-height: 1.4; color: #DFC388; font-weight: 700; letter-spacing: 0.08em;"
+            "font-size: 18px; line-height: 1.4; color: #E4C98E; font-weight: 700; letter-spacing: 0.06em;"
         ),
         "h3": (
-            "margin: 18px 0 8px 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; "
-            "font-size: 16px; line-height: 1.45; color: #D6B87A; font-weight: 700; letter-spacing: 0.04em;"
+            "margin: 16px 0 8px 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; "
+            "font-size: 16px; line-height: 1.45; color: #DFC388; font-weight: 700; letter-spacing: 0.04em;"
         ),
-        "p": "margin: 0 0 12px 0; font-size: 15px; line-height: 1.75; color: #F3EBD8;",
-        "ul": "margin: 6px 0 14px 0; padding-left: 20px;",
-        "ol": "margin: 6px 0 14px 0; padding-left: 20px;",
-        "li": "margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F3EBD8;",
-        "strong": "color: #DFC388; font-weight: 700;",
+        "p": "margin: 0 0 12px 0; font-size: 15px; line-height: 1.75; color: #F5EFE2;",
+        "ul": "margin: 6px 0 14px 0; padding-left: 18px;",
+        "ol": "margin: 6px 0 14px 0; padding-left: 18px;",
+        "li": "margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F5EFE2;",
+        "strong": "color: #E4C98E; font-weight: 700;",
         "blockquote": (
-            "margin: 14px 0 22px 0; padding: 15px 18px; background-color: #082836; "
-            "border: 1px solid #C8A86B; border-left: 4px solid #DFC388; "
-            "border-radius: 6px; color: #F3EBD8;"
+            "margin: 14px 0 20px 0; padding: 14px 15px; "
+            "background-color: #082836; background-image: linear-gradient(#082836, #082836); "
+            "border: 1px solid #C8A86B; border-left: 4px solid #E4C98E; "
+            "border-radius: 6px; color: #F5EFE2;"
         ),
         "code": (
-            "background-color: #07222E; color: #DFC388; border: 1px solid #8F7443; "
-            "padding: 2px 7px; border-radius: 4px; "
+            "display: inline-block; white-space: nowrap; margin: 1px 2px; "
+            "background-color: #07222E; background-image: linear-gradient(#07222E, #07222E); "
+            "color: #E4C98E; border: 1px solid #9E834F; "
+            "padding: 1px 7px; border-radius: 4px; "
             "font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;"
         ),
-        "hr": "border: none; border-top: 1px solid #8F7443; margin: 20px 0;",
+        "hr": "border: none; border-top: 1px solid #8F7443; margin: 18px 0;",
         "table": (
             "width: 100%; border-collapse: collapse; margin: 12px 0 16px 0; "
-            "font-size: 14px; line-height: 1.55; background-color: #082836;"
+            "font-size: 14px; line-height: 1.5; "
+            "background-color: #082836; background-image: linear-gradient(#082836, #082836);"
         ),
         "th": (
-            "background-color: #07222E; color: #DFC388; text-align: left; "
-            "padding: 8px 10px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; "
-            "font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.06em;"
+            "background-color: #07222E; background-image: linear-gradient(#07222E, #07222E); "
+            "color: #E4C98E; text-align: left; "
+            "padding: 8px 8px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; "
+            "font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;"
         ),
         "td": (
-            "padding: 8px 10px; border-bottom: 1px solid #2A5466; color: #F3EBD8;"
+            "padding: 8px 8px; border-bottom: 1px solid #2A5466; color: #F5EFE2;"
         ),
-        "a": "color: #DFC388; text-decoration: underline;",
+        "a": "color: #E4C98E; text-decoration: underline;",
     }
 
     styled = html_body
@@ -978,13 +983,14 @@ def _inject_inline_styles(html_body: str) -> str:
 
         styled = re.sub(pattern, _repl, styled)
 
-    # 將「今日必盯題材」升級為英倫香檳金復古標籤（並自動清除可能殘留的 🎯）
+    # 將「今日必盯題材」升級為英倫香檳金復古標籤（加入 linear-gradient 防止手機深色模式反色）
     focus_badge = (
-        '<span style="display: inline-block; background-color: #C8A86B; color: #082836; '
+        '<span style="display: inline-block; background-color: #C8A86B; '
+        'background-image: linear-gradient(#C8A86B, #C8A86B); color: #082836; '
         'font-size: 11px; font-weight: 800; letter-spacing: 0.14em; padding: 3px 9px; '
-        'border-radius: 3px; vertical-align: middle; margin-right: 9px;">FOCUS</span>'
+        'border-radius: 3px; vertical-align: middle; margin-right: 8px;">FOCUS</span>'
         '<strong style="font-family: Georgia, \'Noto Serif TC\', serif; font-size: 16px; '
-        'color: #DFC388; letter-spacing: 0.08em; vertical-align: middle;">今日必盯題材</strong>'
+        'color: #E4C98E; letter-spacing: 0.06em; vertical-align: middle;">今日必盯題材</strong>'
     )
     styled = re.sub(
         r"(?:🎯\s*)?<strong[^>]*>\s*(?:🎯\s*)?今日必盯題材\s*</strong>",
@@ -1000,15 +1006,15 @@ def _inject_inline_styles(html_body: str) -> str:
         styled,
     )
 
-    # 套用英倫深底高對比配色（台股紅漲綠跌）：▲ 亮酒紅、▼ 亮翠綠
+    # 套用英倫深底高對比配色（台股紅漲綠跌），並加上 white-space: nowrap 防止手機數字斷行
     styled = re.sub(
         r"(▲(?:\s*[+\-]?\d[\d,\.]*\s*(?:%|億|萬口|點)?)?)",
-        r'<span style="color: #FF8585; font-weight: 700;">\1</span>',
+        r'<span style="color: #FF8585; font-weight: 700; white-space: nowrap;">\1</span>',
         styled,
     )
     styled = re.sub(
         r"(▼(?:\s*[+\-]?\d[\d,\.]*\s*(?:%|億|萬口|點)?)?)",
-        r'<span style="color: #6EE7B7; font-weight: 700;">\1</span>',
+        r'<span style="color: #6EE7B7; font-weight: 700; white-space: nowrap;">\1</span>',
         styled,
     )
     return styled
@@ -1039,11 +1045,12 @@ def render_email_html(
         cta_html = ""
         if interactive_url:
             cta_html = f"""
-            <div style="text-align: center; margin-top: 12px;">
-              <a href="{html.escape(interactive_url, quote=True)}" target="_blank" rel="noopener noreferrer"
-                 style="display: inline-block; background-color: #C8A86B; color: #082836; text-decoration: none;
-                        font-family: Georgia, 'Noto Serif TC', serif; font-size: 13px; font-weight: 800;
-                        letter-spacing: 0.1em; padding: 9px 20px; border-radius: 4px; border: 1px solid #DFC388;">
+            <div style="text-align: center; margin-top: 14px;">
+              <a class="cta-btn" href="{html.escape(interactive_url, quote=True)}" target="_blank" rel="noopener noreferrer"
+                 style="display: inline-block; background-color: #C8A86B; background-image: linear-gradient(#C8A86B, #C8A86B);
+                        color: #082836; text-decoration: none;
+                        font-family: Georgia, 'Noto Serif TC', serif; font-size: 14px; font-weight: 800;
+                        letter-spacing: 0.08em; padding: 11px 22px; border-radius: 5px; border: 1px solid #E4C98E;">
                 ◆ 開啟今日 3D 互動翻牌網頁版 ◆
               </a>
             </div>
@@ -1094,15 +1101,16 @@ def render_email_html(
         unique_titles = list(dict.fromkeys(title for title, _ in sources))
         tags_html = "\n".join(
             f'<span style="display: inline-block; margin: 0 6px 6px 0; padding: 3px 9px; '
-            f'background-color: #0B3547; border: 1px solid #8F7443; border-radius: 4px; '
-            f'font-size: 12px; color: #DFC388;">{html.escape(title)}</span>'
+            f'background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547); '
+            f'border: 1px solid #8F7443; border-radius: 4px; '
+            f'font-size: 12px; color: #E4C98E;">{html.escape(title)}</span>'
             for title in unique_titles
         )
         sources_section = f"""
-        <div style="margin-top: 26px; padding: 14px 16px; background-color: #082836; border: 1px solid #8F7443; border-radius: 8px;">
+        <div style="margin-top: 24px; padding: 14px 15px; background-color: #082836; background-image: linear-gradient(#082836, #082836); border: 1px solid #8F7443; border-radius: 8px;">
           <div style="margin-bottom: 10px;">
-            <span style="display: inline-block; background-color: #C8A86B; color: #082836; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; padding: 2px 7px; border-radius: 3px; vertical-align: middle; margin-right: 8px;">SOURCES</span>
-            <span style="font-family: Georgia, 'Noto Serif TC', serif; font-size: 13px; font-weight: 700; color: #DFC388; letter-spacing: 0.05em; vertical-align: middle;">即時新聞查證來源（Google Search Grounding）</span>
+            <span style="display: inline-block; background-color: #C8A86B; background-image: linear-gradient(#C8A86B, #C8A86B); color: #082836; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; padding: 2px 7px; border-radius: 3px; vertical-align: middle; margin-right: 8px;">SOURCES</span>
+            <span style="font-family: Georgia, 'Noto Serif TC', serif; font-size: 13px; font-weight: 700; color: #E4C98E; letter-spacing: 0.05em; vertical-align: middle;">即時新聞查證來源（Google Search Grounding）</span>
           </div>
           <div style="line-height: 1.6;">
             {tags_html}
@@ -1115,57 +1123,70 @@ def render_email_html(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="supported-color-schemes" content="dark light" />
   <title>【盤前暖男台股財報】{date_str} 今日關鍵題材與觀察名單</title>
   <style>
+    :root {{ color-scheme: dark light; supported-color-schemes: dark light; }}
+    @media (prefers-color-scheme: dark) {{
+      .bg-deep {{ background-color: #06212C !important; background-image: linear-gradient(#06212C, #06212C) !important; }}
+      .bg-main {{ background-color: #0B3547 !important; background-image: linear-gradient(#0B3547, #0B3547) !important; }}
+      .bg-panel {{ background-color: #082836 !important; background-image: linear-gradient(#082836, #082836) !important; }}
+      .cta-btn {{ background-color: #C8A86B !important; background-image: linear-gradient(#C8A86B, #C8A86B) !important; color: #082836 !important; }}
+    }}
     @media only screen and (max-width: 600px) {{
-      .email-wrapper {{ padding: 10px 6px !important; }}
-      .email-card {{ border-radius: 8px !important; }}
-      .email-header {{ padding: 22px 16px !important; }}
-      .email-body {{ padding: 18px 15px !important; }}
-      .email-title {{ font-size: 21px !important; }}
+      .email-wrapper {{ padding: 6px 4px !important; }}
+      .email-card {{ border-radius: 8px !important; border-width: 1.5px !important; }}
+      .email-header {{ padding: 20px 14px 16px 14px !important; }}
+      .email-body {{ padding: 16px 13px 20px 13px !important; }}
+      .email-footer {{ padding: 14px 14px !important; }}
+      .email-title {{ font-size: 20px !important; letter-spacing: 0.1em !important; }}
+      .email-body table {{ font-size: 13px !important; }}
+      .email-body th, .email-body td {{ padding: 6px 5px !important; }}
+      .cta-btn {{ display: block !important; width: 100% !important; box-sizing: border-box !important; padding: 12px 14px !important; font-size: 14px !important; }}
     }}
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #06212C; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; -webkit-font-smoothing: antialiased;">
-  <div class="email-wrapper" style="padding: 24px 12px; background-color: #06212C;">
+<body class="body bg-deep" bgcolor="#06212C" style="margin: 0; padding: 0; background-color: #06212C; background-image: linear-gradient(#06212C, #06212C); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; -webkit-font-smoothing: antialiased;">
+  <div class="email-wrapper bg-deep" style="padding: 20px 10px; background-color: #06212C; background-image: linear-gradient(#06212C, #06212C);">
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 660px; margin: 0 auto;">
       <tr>
-        <td>
-          <div class="email-card" style="background-color: #0B3547; border-radius: 10px; overflow: hidden; border: 2px solid #C8A86B; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
+        <td bgcolor="#0B3547" style="padding: 0; border-radius: 10px; background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547);">
+          <div class="email-card bg-main" style="background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547); border-radius: 10px; overflow: hidden; border: 2px solid #C8A86B; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
             <!-- British Heritage Header Banner -->
-            <div class="email-header" style="background-color: #082836; padding: 28px 26px 22px 26px; text-align: center;">
-              <div style="font-family: Georgia, serif; font-size: 11px; letter-spacing: 0.22em; color: #C8A86B; font-weight: 700; margin-bottom: 10px;">
+            <div class="email-header bg-panel" style="background-color: #082836; background-image: linear-gradient(#082836, #082836); padding: 26px 24px 20px 24px; text-align: center;">
+              <div style="font-family: Georgia, serif; font-size: 11px; letter-spacing: 0.2em; color: #C8A86B; font-weight: 700; margin-bottom: 8px;">
                 PRE-MARKET INTELLIGENCE · {date_str} ({weekday_str})
               </div>
-              <h1 class="email-title" style="margin: 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 24px; line-height: 1.4; font-weight: 700; color: #DFC388; letter-spacing: 0.14em;">
+              <h1 class="email-title" style="margin: 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 24px; line-height: 1.4; font-weight: 700; color: #E4C98E; letter-spacing: 0.14em;">
                 盤前暖男台股財報
               </h1>
               <!-- 可不可風格燙金菱形分隔線 ◆──────◆ -->
-              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 14px auto 12px auto;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 12px auto 10px auto;">
                 <tr>
-                  <td style="width: 14px; color: #DFC388; font-size: 11px; text-align: left; padding: 0; border: none;">◆</td>
-                  <td style="padding: 0; border: none;"><div style="height: 1px; background-color: #C8A86B;"></div></td>
-                  <td style="width: 14px; color: #DFC388; font-size: 11px; text-align: right; padding: 0; border: none;">◆</td>
+                  <td style="width: 14px; color: #E4C98E; font-size: 11px; text-align: left; padding: 0; border: none;">◆</td>
+                  <td style="padding: 0; border: none;"><div style="height: 1px; background-color: #C8A86B; background-image: linear-gradient(#C8A86B, #C8A86B);"></div></td>
+                  <td style="width: 14px; color: #E4C98E; font-size: 11px; text-align: right; padding: 0; border: none;">◆</td>
                 </tr>
               </table>
-              <div style="font-size: 12px; color: #D8CEB8; letter-spacing: 0.1em;">
+              <div style="font-size: 12px; color: #E2D9C5; letter-spacing: 0.08em;">
                 焦點主軸：{html.escape(market_focus)}
               </div>
             </div>
 
             <!-- Main Content -->
-            <div class="email-body" style="padding: 22px 26px 26px 26px; background-color: #0B3547;">
+            <div class="email-body bg-main" style="padding: 20px 24px 24px 24px; background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547);">
               {body_html}
               {sources_section}
             </div>
 
             <!-- Footer -->
-            <div style="padding: 16px 24px; background-color: #082836; border-top: 1px solid #C8A86B; font-size: 12px; line-height: 1.65; color: #B8C4C9;">
-              <p style="margin: 0 0 6px 0; color: #D8CEB8;">
-                <strong style="color: #DFC388;">免責聲明：</strong>本電子報由 AI 結合即時網路搜尋整理而成，僅供市場政經資訊與題材研究參考，不構成任何買賣或投資建議。投資有賺有賠，下單前請務必審慎評估並獨立判斷。
+            <div class="email-footer bg-panel" style="padding: 16px 22px; background-color: #082836; background-image: linear-gradient(#082836, #082836); border-top: 1px solid #C8A86B; font-size: 12px; line-height: 1.65; color: #C2CFD4;">
+              <p style="margin: 0 0 6px 0; color: #E2D9C5;">
+                <strong style="color: #E4C98E;">免責聲明：</strong>本電子報由 AI 結合即時網路搜尋整理而成，僅供市場政經資訊與題材研究參考，不構成任何買賣或投資建議。投資有賺有賠，下單前請務必審慎評估並獨立判斷。
               </p>
-              <p style="margin: 0; color: #8CA6B2;">
-                產生時間：{generated_at} (台灣時間) · 本信件以密件副本（Bcc）發送以保護所有訂閱者隱私。
+              <p style="margin: 0; color: #9BB3BE;">
+                產生時間：{generated_at} (台灣時間) · 本信件由快樂猛男台股早報獨立寄送以保護所有訂閱者隱私。
               </p>
             </div>
           </div>
@@ -1390,7 +1411,16 @@ def render_interactive_flip_page(
       gap: 14px;
     }}
     @media (max-width: 600px) {{
-      .cards-grid {{ grid-template-columns: 1fr; }}
+      body {{ padding: 8px 6px 32px; }}
+      header {{ padding: 20px 14px 16px; }}
+      h1 {{ font-size: 21px; letter-spacing: 0.1em; }}
+      .interactive-zone {{ padding: 16px 14px 6px; }}
+      main {{ padding: 12px 14px 22px; }}
+      main table {{ font-size: 13px !important; }}
+      main th, main td {{ padding: 6px 5px !important; }}
+      .cards-grid {{ grid-template-columns: 1fr; gap: 12px; }}
+      .flip-card {{ height: 158px; }}
+      .btn-gold {{ width: 100%; padding: 10px 14px; font-size: 13px; }}
     }}
     .flip-card {{
       perspective: 1100px;
