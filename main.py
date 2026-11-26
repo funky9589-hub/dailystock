@@ -272,6 +272,9 @@ def extract_search_queries(response: Any) -> list[str]:
     return [str(q) for q in queries if q]
 
 
+FALLBACK_GEMINI_MODELS = ("gemini-2.5-flash-lite", "gemini-2.0-flash")
+
+
 def _call_gemini_with_retry(
     client: genai.Client,
     model: str,
@@ -279,25 +282,40 @@ def _call_gemini_with_retry(
     config: types.GenerateContentConfig,
     max_attempts: int = 4,
 ) -> Any:
-    """呼叫 Gemini API，遇 503/429 暫時性尖峰自動指數退避重試。"""
-    delay = 5
-    for attempt in range(1, max_attempts + 1):
-        try:
-            return client.models.generate_content(
-                model=model,
-                contents=contents,
-                config=config,
-            )
-        except genai_errors.APIError as exc:
-            status_code = getattr(exc, "code", None)
-            retryable = status_code in (429, 500, 502, 503, 504)
-            if not retryable or attempt == max_attempts:
-                raise
-            print(
-                f"   ⏳ Gemini 暫時忙碌（HTTP {status_code}），{delay} 秒後進行第 {attempt + 1}/{max_attempts} 次重試..."
-            )
-            time.sleep(delay)
-            delay *= 2
+    """呼叫 Gemini API，遇 503 尖峰自動退避重試，遇每日 429 額度上限則自動切換備援模型。"""
+    candidate_models = [model] + [m for m in FALLBACK_GEMINI_MODELS if m != model]
+
+    for current_model in candidate_models:
+        delay = 5
+        for attempt in range(1, max_attempts + 1):
+            try:
+                return client.models.generate_content(
+                    model=current_model,
+                    contents=contents,
+                    config=config,
+                )
+            except genai_errors.APIError as exc:
+                status_code = getattr(exc, "code", None)
+                err_text = str(exc)
+                # 若是當日免費額度耗盡（PerDay），直接跳下一個備援模型而不浪費時間空等
+                if status_code == 429 and ("PerDay" in err_text or "per day" in err_text.lower()):
+                    print(f"   ⚠️ 模型 {current_model} 今日免費額度已達上限，嘗試切換備援模型...")
+                    break
+                retryable = status_code in (429, 500, 502, 503, 504)
+                if not retryable:
+                    raise
+                if attempt == max_attempts:
+                    if current_model != candidate_models[-1]:
+                        print(f"   ⚠️ 模型 {current_model} 連續忙碌，改由備援模型接手...")
+                        break
+                    raise
+                print(
+                    f"   ⏳ Gemini ({current_model}) 暫時忙碌（HTTP {status_code}），{delay} 秒後進行第 {attempt + 1}/{max_attempts} 次重試..."
+                )
+                time.sleep(delay)
+                delay *= 2
+
+    raise RuntimeError("所有 Gemini 模型均無法回應或今日額度已滿，請稍後再試。")
 
 
 def generate_daily_report(config: dict[str, Any], now_tw: datetime) -> tuple[str, list[tuple[str, str]]]:
