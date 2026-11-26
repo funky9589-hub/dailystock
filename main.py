@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from email.utils import formataddr, formatdate, make_msgid
 import html
+from html.parser import HTMLParser
 import io
 import math
 import os
@@ -914,38 +915,147 @@ def generate_market_ticker_gif(
     return buf.getvalue()
 
 
+def generate_masthead_png(date_str: str, weekday_str: str, market_focus: str) -> bytes:
+    """生成高解析英倫孔雀深藍綠 × 純正香檳燙金主刊頭 PNG（完全免疫 iPhone Gmail 深色模式壓暗）。"""
+    width, height = 900, 196
+    bg = (8, 40, 54, 255)             # #082836 深孔雀藍綠刊頭底
+    gold = (217, 183, 108, 255)       # #D9B76C 香檳金線
+    gold_hi = (245, 216, 142, 255)    # #F5D88E 明亮燙金標題
+    cream = (246, 240, 226, 255)      # #F6F0E2 羊皮紙米白
+
+    img = Image.new("RGBA", (width, height), bg)
+    draw = ImageDraw.Draw(img)
+
+    f_kicker = _load_font(16, bold=True)
+    f_title = _load_cjk_font(42, bold=True)
+    f_sub = _load_cjk_font(18, bold=False)
+
+    # 第一行：英倫日期副標
+    kicker = f"PRE-MARKET INTELLIGENCE  ·  {date_str} ({weekday_str})"
+    kb = draw.textbbox((0, 0), kicker, font=f_kicker)
+    draw.text(((width - (kb[2] - kb[0])) // 2, 24), kicker, font=f_kicker, fill=gold)
+
+    # 第二行：大型明亮香檳燙金主標題
+    title = "盤 前 暖 男 台 股 財 報"
+    tb = draw.textbbox((0, 0), title, font=f_title)
+    draw.text(((width - (tb[2] - tb[0])) // 2, 54), title, font=f_title, fill=gold_hi)
+
+    # 第三行：可不可風格燙金菱形分隔線 ◆──────────◆
+    line_y = 126
+    draw.line((46, line_y, width - 46, line_y), fill=gold, width=2)
+    _draw_gold_diamond(draw, 40, line_y, 7, gold_hi)
+    _draw_gold_diamond(draw, width - 40, line_y, 7, gold_hi)
+
+    # 第四行：焦點主軸
+    sub_text = f"焦點主軸：{market_focus}"
+    sb = draw.textbbox((0, 0), sub_text, font=f_sub)
+    draw.text(((width - (sb[2] - sb[0])) // 2, 146), sub_text, font=f_sub, fill=cream)
+
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, format="PNG", optimize=True)
+    return buf.getvalue()
+
+
+def _wrap_gmail_white(text_html: str, block: bool = False) -> str:
+    """僅針對純白內文套用 iOS Gmail 深色模式鎖白外框（避免影響香檳金與紅綠色的色相）。"""
+    tag = "div" if block else "span"
+    return (
+        f'<{tag} class="gmail-blend-screen">'
+        f'<{tag} class="gmail-blend-difference" style="color: #FFFFFF;">'
+        f"{text_html}"
+        f"</{tag}></{tag}>"
+    )
+
+
+class _WhiteTextLockParser(HTMLParser):
+    """鎖定正文、標題、代號與表頭的亮白文字，保留紅漲綠跌與實心金徽章原生配色。"""
+
+    WHITE_CONTAINERS = {"p", "li", "td", "th", "h2", "h3", "strong", "b", "code"}
+    SKIP_TAGS = {"span", "a", "style", "title"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=False)
+        self._stack: list[str] = []
+        self._out: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._stack.append(tag.lower())
+        self._out.append(self.get_starttag_text() or f"<{tag}>")
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self._out.append(self.get_starttag_text() or f"<{tag} />")
+
+    def handle_endtag(self, tag: str) -> None:
+        lower = tag.lower()
+        for idx in range(len(self._stack) - 1, -1, -1):
+            if self._stack[idx] == lower:
+                del self._stack[idx]
+                break
+        self._out.append(f"</{tag}>")
+
+    def handle_data(self, data: str) -> None:
+        if (
+            data.strip()
+            and any(t in self.WHITE_CONTAINERS for t in self._stack)
+            and not any(t in self.SKIP_TAGS for t in self._stack)
+        ):
+            self._out.append(_wrap_gmail_white(data, block=False))
+        else:
+            self._out.append(data)
+
+    def handle_entityref(self, name: str) -> None:
+        self._out.append(f"&{name};")
+
+    def handle_charref(self, name: str) -> None:
+        self._out.append(f"&#{name};")
+
+    def handle_comment(self, data: str) -> None:
+        self._out.append(f"<!--{data}-->")
+
+    def get_html(self) -> str:
+        return "".join(self._out)
+
+
+def _lock_white_text_only(html_str: str) -> str:
+    parser = _WhiteTextLockParser()
+    parser.feed(html_str)
+    parser.close()
+    return parser.get_html()
+
+
 def _inject_inline_styles(html_body: str) -> str:
-    """為 HTML 元素套用英倫孔雀深藍綠 × 香檳燙金 inline style（含手機 Gmail 深色模式鎖色與不斷行優化）。"""
+    """為 HTML 元素套用英倫孔雀深藍綠 × 香檳燙金線框＋高亮度鎖白文字（手機深色模式 100% 清晰）。"""
     tag_styles = {
         "h2": (
-            "margin: 24px 0 12px 0; padding: 0 0 8px 0; "
-            "border-bottom: 1px solid #C8A86B; "
+            "margin: 24px 0 12px 0; padding: 0 0 8px 10px; "
+            "border-left: 4px solid #D9B76C; border-bottom: 1.5px solid #D9B76C; "
             "font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; "
-            "font-size: 18px; line-height: 1.4; color: #E4C98E; font-weight: 700; letter-spacing: 0.06em;"
+            "font-size: 18px; line-height: 1.4; color: #FFFFFF; font-weight: 800; letter-spacing: 0.06em;"
         ),
         "h3": (
-            "margin: 16px 0 8px 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; "
-            "font-size: 16px; line-height: 1.45; color: #DFC388; font-weight: 700; letter-spacing: 0.04em;"
+            "margin: 18px 0 8px 0; padding-left: 8px; border-left: 3px solid #D9B76C; "
+            "font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; "
+            "font-size: 16px; line-height: 1.45; color: #FFFFFF; font-weight: 800; letter-spacing: 0.04em;"
         ),
-        "p": "margin: 0 0 12px 0; font-size: 15px; line-height: 1.75; color: #F5EFE2;",
-        "ul": "margin: 6px 0 14px 0; padding-left: 18px;",
-        "ol": "margin: 6px 0 14px 0; padding-left: 18px;",
-        "li": "margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #F5EFE2;",
-        "strong": "color: #E4C98E; font-weight: 700;",
+        "p": "margin: 0 0 12px 0; font-size: 15px; line-height: 1.75; color: #FFFFFF;",
+        "ul": "margin: 6px 0 14px 0; padding-left: 18px; color: #D9B76C;",
+        "ol": "margin: 6px 0 14px 0; padding-left: 18px; color: #D9B76C;",
+        "li": "margin: 0 0 8px 0; font-size: 15px; line-height: 1.7; color: #FFFFFF;",
+        "strong": "color: #FFFFFF; font-weight: 800;",
         "blockquote": (
             "margin: 14px 0 20px 0; padding: 14px 15px; "
             "background-color: #082836; background-image: linear-gradient(#082836, #082836); "
-            "border: 1px solid #C8A86B; border-left: 4px solid #E4C98E; "
-            "border-radius: 6px; color: #F5EFE2;"
+            "border: 1px solid #D9B76C; border-left: 4px solid #F5D88E; "
+            "border-radius: 6px; color: #FFFFFF;"
         ),
         "code": (
-            "display: inline-block; white-space: nowrap; margin: 1px 2px; "
+            "display: inline-block; white-space: nowrap; margin: 2px 2px; "
             "background-color: #07222E; background-image: linear-gradient(#07222E, #07222E); "
-            "color: #E4C98E; border: 1px solid #9E834F; "
-            "padding: 1px 7px; border-radius: 4px; "
-            "font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 600;"
+            "color: #FFFFFF; border: 1.5px solid #D9B76C; "
+            "padding: 2px 8px; border-radius: 4px; "
+            "font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; font-weight: 700;"
         ),
-        "hr": "border: none; border-top: 1px solid #8F7443; margin: 18px 0;",
+        "hr": "border: none; border-top: 1px solid #D9B76C; margin: 18px 0;",
         "table": (
             "width: 100%; border-collapse: collapse; margin: 12px 0 16px 0; "
             "font-size: 14px; line-height: 1.5; "
@@ -953,14 +1063,14 @@ def _inject_inline_styles(html_body: str) -> str:
         ),
         "th": (
             "background-color: #07222E; background-image: linear-gradient(#07222E, #07222E); "
-            "color: #E4C98E; text-align: left; "
-            "padding: 8px 8px; border-top: 1px solid #C8A86B; border-bottom: 1px solid #C8A86B; "
+            "color: #FFFFFF; text-align: left; "
+            "padding: 8px 8px; border-top: 1.5px solid #D9B76C; border-bottom: 1.5px solid #D9B76C; "
             "font-family: Georgia, 'Noto Serif TC', serif; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;"
         ),
         "td": (
-            "padding: 8px 8px; border-bottom: 1px solid #2A5466; color: #F5EFE2;"
+            "padding: 8px 8px; border-bottom: 1px solid #2F5B6D; color: #FFFFFF;"
         ),
-        "a": "color: #E4C98E; text-decoration: underline;",
+        "a": "color: #F5D88E; text-decoration: underline;",
     }
 
     styled = html_body
@@ -983,14 +1093,14 @@ def _inject_inline_styles(html_body: str) -> str:
 
         styled = re.sub(pattern, _repl, styled)
 
-    # 將「今日必盯題材」升級為英倫香檳金復古標籤（加入 linear-gradient 防止手機深色模式反色）
+    # 亮香檳金 FOCUS 膠囊 + 明亮鎖白標題「今日必盯題材」
     focus_badge = (
-        '<span style="display: inline-block; background-color: #C8A86B; '
-        'background-image: linear-gradient(#C8A86B, #C8A86B); color: #082836; '
+        '<span style="display: inline-block; background-color: #D9B76C; '
+        'background-image: linear-gradient(#D9B76C, #D9B76C); color: #082836; '
         'font-size: 11px; font-weight: 800; letter-spacing: 0.14em; padding: 3px 9px; '
         'border-radius: 3px; vertical-align: middle; margin-right: 8px;">FOCUS</span>'
         '<strong style="font-family: Georgia, \'Noto Serif TC\', serif; font-size: 16px; '
-        'color: #E4C98E; letter-spacing: 0.06em; vertical-align: middle;">今日必盯題材</strong>'
+        'color: #FFFFFF; letter-spacing: 0.06em; vertical-align: middle;">今日必盯題材</strong>'
     )
     styled = re.sub(
         r"(?:🎯\s*)?<strong[^>]*>\s*(?:🎯\s*)?今日必盯題材\s*</strong>",
@@ -999,22 +1109,15 @@ def _inject_inline_styles(html_body: str) -> str:
         count=1,
     )
 
-    # 為每個 h2 章節前加上精緻金色菱形飾點 ◆
-    styled = re.sub(
-        r"(<h2[^>]*>)",
-        r'\1<span style="color: #C8A86B; font-size: 13px; margin-right: 8px;">◆</span>',
-        styled,
-    )
-
-    # 套用英倫深底高對比配色（台股紅漲綠跌），並加上 white-space: nowrap 防止手機數字斷行
+    # 套用高對比紅漲綠跌（保留原生紅綠不進濾色層）
     styled = re.sub(
         r"(▲(?:\s*[+\-]?\d[\d,\.]*\s*(?:%|億|萬口|點)?)?)",
-        r'<span style="color: #FF8585; font-weight: 700; white-space: nowrap;">\1</span>',
+        r'<span style="color: #FF8A8A; font-weight: 700; white-space: nowrap;">\1</span>',
         styled,
     )
     styled = re.sub(
         r"(▼(?:\s*[+\-]?\d[\d,\.]*\s*(?:%|億|萬口|點)?)?)",
-        r'<span style="color: #6EE7B7; font-weight: 700; white-space: nowrap;">\1</span>',
+        r'<span style="color: #6EF0B8; font-weight: 700; white-space: nowrap;">\1</span>',
         styled,
     )
     return styled
@@ -1025,11 +1128,12 @@ def render_email_html(
     sources: list[tuple[str, str]],
     now_tw: datetime,
     market_focus: str,
+    masthead_img_src: str | None = None,
     ticker_img_src: str | None = None,
     tw_picks_img_src: str | None = None,
     interactive_url: str = "",
 ) -> str:
-    """將 Markdown 報告轉換為英倫孔雀深藍綠 × 香檳燙金響應式 HTML 電子報。"""
+    """將 Markdown 報告轉換為英倫孔雀深藍綠 × 香檳燙金響應式 HTML 電子報（白字鎖白＋純正暖金）。"""
     date_str = now_tw.strftime("%Y/%m/%d")
     weekday_str = f"週{WEEKDAY_ZH[now_tw.weekday()]}"
     generated_at = now_tw.strftime("%Y/%m/%d %H:%M")
@@ -1038,19 +1142,19 @@ def render_email_html(
         report_md,
         extensions=["extra", "sane_lists", "nl2br"],
     )
-    body_html = _inject_inline_styles(raw_html)
+    # 僅鎖定純白內文，香檳金標題、金框與紅綠箭頭保持純正暖色不偏藍
+    body_html = _lock_white_text_only(_inject_inline_styles(raw_html))
 
-    # 將美股英倫動態翻牌圖卡 GIF（以及選填的互動翻牌按鈕）安插在「今日政經關鍵風向」標題下方
     if ticker_img_src:
         cta_html = ""
         if interactive_url:
             cta_html = f"""
             <div style="text-align: center; margin-top: 14px;">
               <a class="cta-btn" href="{html.escape(interactive_url, quote=True)}" target="_blank" rel="noopener noreferrer"
-                 style="display: inline-block; background-color: #C8A86B; background-image: linear-gradient(#C8A86B, #C8A86B);
+                 style="display: inline-block; background-color: #D9B76C; background-image: linear-gradient(#D9B76C, #D9B76C);
                         color: #082836; text-decoration: none;
                         font-family: Georgia, 'Noto Serif TC', serif; font-size: 14px; font-weight: 800;
-                        letter-spacing: 0.08em; padding: 11px 22px; border-radius: 5px; border: 1px solid #E4C98E;">
+                        letter-spacing: 0.08em; padding: 11px 22px; border-radius: 5px; border: 1px solid #F5D88E;">
                 ◆ 開啟今日 3D 互動翻牌網頁版 ◆
               </a>
             </div>
@@ -1070,7 +1174,6 @@ def render_email_html(
         )
         body_html = inserted if count else ticker_block + body_html
 
-    # 將台股重點關注三支股票動態翻牌 GIF 安插在「潛在風險與避雷提示」與「SOURCES」之間
     if tw_picks_img_src:
         tw_picks_block = f"""
         <div style="margin: 14px 0 18px 0;">
@@ -1088,34 +1191,67 @@ def render_email_html(
             body_html = inserted_tw
         else:
             body_html += (
-                '<h2 style="margin: 26px 0 12px 0; padding: 0 0 8px 0; border-bottom: 1px solid #C8A86B; '
-                "font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 19px; line-height: 1.4; "
-                'color: #DFC388; font-weight: 700; letter-spacing: 0.08em;">'
-                '<span style="color: #C8A86B; font-size: 13px; margin-right: 8px;">◆</span>今日重點關注三支股票</h2>'
+                '<h2 style="margin: 24px 0 12px 0; padding: 0 0 8px 0; border-bottom: 1px solid #D9B76C; '
+                "font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 18px; line-height: 1.4; "
+                'color: #F5D88E; font-weight: 700; letter-spacing: 0.06em;">'
+                '<span style="color: #F5D88E; font-size: 13px; margin-right: 8px;">◆</span>今日重點關注三支股票</h2>'
                 + tw_picks_block
             )
 
     sources_section = ""
     if sources:
-        # 避免在信件內放入大量 Google 轉址連結而觸發 Gmail 垃圾郵件濾網，改以英倫燙金來源標籤呈現
         unique_titles = list(dict.fromkeys(title for title, _ in sources))
         tags_html = "\n".join(
             f'<span style="display: inline-block; margin: 0 6px 6px 0; padding: 3px 9px; '
             f'background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547); '
-            f'border: 1px solid #8F7443; border-radius: 4px; '
-            f'font-size: 12px; color: #E4C98E;">{html.escape(title)}</span>'
+            f'border: 1px solid #D9B76C; border-radius: 4px; '
+            f'font-size: 12px; color: #FFFFFF;">{_wrap_gmail_white(html.escape(title), block=False)}</span>'
             for title in unique_titles
         )
+        sources_title_locked = _wrap_gmail_white("即時新聞查證來源（Google Search Grounding）", block=False)
         sources_section = f"""
-        <div style="margin-top: 24px; padding: 14px 15px; background-color: #082836; background-image: linear-gradient(#082836, #082836); border: 1px solid #8F7443; border-radius: 8px;">
+        <div style="margin-top: 24px; padding: 14px 15px; background-color: #082836; background-image: linear-gradient(#082836, #082836); border: 1px solid #D9B76C; border-radius: 8px;">
           <div style="margin-bottom: 10px;">
-            <span style="display: inline-block; background-color: #C8A86B; background-image: linear-gradient(#C8A86B, #C8A86B); color: #082836; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; padding: 2px 7px; border-radius: 3px; vertical-align: middle; margin-right: 8px;">SOURCES</span>
-            <span style="font-family: Georgia, 'Noto Serif TC', serif; font-size: 13px; font-weight: 700; color: #E4C98E; letter-spacing: 0.05em; vertical-align: middle;">即時新聞查證來源（Google Search Grounding）</span>
+            <span style="display: inline-block; background-color: #D9B76C; background-image: linear-gradient(#D9B76C, #D9B76C); color: #082836; font-size: 10px; font-weight: 800; letter-spacing: 0.12em; padding: 2px 7px; border-radius: 3px; vertical-align: middle; margin-right: 8px;">SOURCES</span>
+            <span style="font-family: Georgia, 'Noto Serif TC', serif; font-size: 13px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.05em; vertical-align: middle;">{sources_title_locked}</span>
           </div>
           <div style="line-height: 1.6;">
             {tags_html}
           </div>
         </div>
+        """
+
+    focus_line_locked = _wrap_gmail_white(f"焦點主軸：{html.escape(market_focus)}", block=False)
+    disclaimer_label_locked = _wrap_gmail_white("免責聲明：", block=False)
+    disclaimer_locked = _wrap_gmail_white(
+        "本電子報由 AI 結合即時網路搜尋整理而成，僅供市場政經資訊與題材研究參考，不構成任何買賣或投資建議。投資有賺有賠，下單前請務必審慎評估並獨立判斷。",
+        block=False,
+    )
+    meta_locked = _wrap_gmail_white(
+        f"產生時間：{generated_at} (台灣時間) · 本信件由快樂猛男台股早報獨立寄送以保護所有訂閱者隱私。",
+        block=False,
+    )
+
+    if masthead_img_src:
+        header_block = f"""
+            <!-- British Heritage Header Banner (High-DPI PNG: 100% Immune to Dark Mode Dimming) -->
+            <div style="background-color: #082836; background-image: linear-gradient(#082836, #082836); padding: 0; text-align: center;">
+              <img src="{masthead_img_src}" alt="盤前暖男台股財報 · {date_str} ({weekday_str})" width="100%" style="display: block; width: 100%; max-width: 656px; height: auto;" />
+            </div>
+        """
+    else:
+        header_block = f"""
+            <div class="email-header bg-panel" style="background-color: #082836; background-image: linear-gradient(#082836, #082836); padding: 26px 24px 20px 24px; text-align: center;">
+              <div style="font-family: Georgia, serif; font-size: 11px; letter-spacing: 0.2em; color: #F5D88E; font-weight: 700; margin-bottom: 8px;">
+                PRE-MARKET INTELLIGENCE · {date_str} ({weekday_str})
+              </div>
+              <h1 class="email-title" style="margin: 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 24px; line-height: 1.4; font-weight: 700; color: #F5D88E; letter-spacing: 0.14em;">
+                盤前暖男台股財報
+              </h1>
+              <div style="font-size: 12px; color: #FFFFFF; letter-spacing: 0.08em; margin-top: 10px;">
+                {focus_line_locked}
+              </div>
+            </div>
         """
 
     return f"""<!DOCTYPE html>
@@ -1128,11 +1264,14 @@ def render_email_html(
   <title>【盤前暖男台股財報】{date_str} 今日關鍵題材與觀察名單</title>
   <style>
     :root {{ color-scheme: dark light; supported-color-schemes: dark light; }}
+    /* 僅對純白內文套用 Gmail 深色模式雙層濾色鎖白，金色標題維持原生暖金不偏藍 */
+    u + .body .gmail-blend-screen {{ background: #000000; mix-blend-mode: screen; }}
+    u + .body .gmail-blend-difference {{ background: #000000; mix-blend-mode: difference; }}
     @media (prefers-color-scheme: dark) {{
       .bg-deep {{ background-color: #06212C !important; background-image: linear-gradient(#06212C, #06212C) !important; }}
       .bg-main {{ background-color: #0B3547 !important; background-image: linear-gradient(#0B3547, #0B3547) !important; }}
       .bg-panel {{ background-color: #082836 !important; background-image: linear-gradient(#082836, #082836) !important; }}
-      .cta-btn {{ background-color: #C8A86B !important; background-image: linear-gradient(#C8A86B, #C8A86B) !important; color: #082836 !important; }}
+      .cta-btn {{ background-color: #D9B76C !important; background-image: linear-gradient(#D9B76C, #D9B76C) !important; color: #082836 !important; }}
     }}
     @media only screen and (max-width: 600px) {{
       .email-wrapper {{ padding: 6px 4px !important; }}
@@ -1152,27 +1291,8 @@ def render_email_html(
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 660px; margin: 0 auto;">
       <tr>
         <td bgcolor="#0B3547" style="padding: 0; border-radius: 10px; background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547);">
-          <div class="email-card bg-main" style="background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547); border-radius: 10px; overflow: hidden; border: 2px solid #C8A86B; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
-            <!-- British Heritage Header Banner -->
-            <div class="email-header bg-panel" style="background-color: #082836; background-image: linear-gradient(#082836, #082836); padding: 26px 24px 20px 24px; text-align: center;">
-              <div style="font-family: Georgia, serif; font-size: 11px; letter-spacing: 0.2em; color: #C8A86B; font-weight: 700; margin-bottom: 8px;">
-                PRE-MARKET INTELLIGENCE · {date_str} ({weekday_str})
-              </div>
-              <h1 class="email-title" style="margin: 0; font-family: Georgia, 'Noto Serif TC', 'PMingLiU', serif; font-size: 24px; line-height: 1.4; font-weight: 700; color: #E4C98E; letter-spacing: 0.14em;">
-                盤前暖男台股財報
-              </h1>
-              <!-- 可不可風格燙金菱形分隔線 ◆──────◆ -->
-              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin: 12px auto 10px auto;">
-                <tr>
-                  <td style="width: 14px; color: #E4C98E; font-size: 11px; text-align: left; padding: 0; border: none;">◆</td>
-                  <td style="padding: 0; border: none;"><div style="height: 1px; background-color: #C8A86B; background-image: linear-gradient(#C8A86B, #C8A86B);"></div></td>
-                  <td style="width: 14px; color: #E4C98E; font-size: 11px; text-align: right; padding: 0; border: none;">◆</td>
-                </tr>
-              </table>
-              <div style="font-size: 12px; color: #E2D9C5; letter-spacing: 0.08em;">
-                焦點主軸：{html.escape(market_focus)}
-              </div>
-            </div>
+          <div class="email-card bg-main" style="background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547); border-radius: 10px; overflow: hidden; border: 2px solid #D9B76C; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);">
+            {header_block}
 
             <!-- Main Content -->
             <div class="email-body bg-main" style="padding: 20px 24px 24px 24px; background-color: #0B3547; background-image: linear-gradient(#0B3547, #0B3547);">
@@ -1181,12 +1301,12 @@ def render_email_html(
             </div>
 
             <!-- Footer -->
-            <div class="email-footer bg-panel" style="padding: 16px 22px; background-color: #082836; background-image: linear-gradient(#082836, #082836); border-top: 1px solid #C8A86B; font-size: 12px; line-height: 1.65; color: #C2CFD4;">
-              <p style="margin: 0 0 6px 0; color: #E2D9C5;">
-                <strong style="color: #E4C98E;">免責聲明：</strong>本電子報由 AI 結合即時網路搜尋整理而成，僅供市場政經資訊與題材研究參考，不構成任何買賣或投資建議。投資有賺有賠，下單前請務必審慎評估並獨立判斷。
+            <div class="email-footer bg-panel" style="padding: 16px 22px; background-color: #082836; background-image: linear-gradient(#082836, #082836); border-top: 1px solid #D9B76C; font-size: 12px; line-height: 1.65; color: #FFFFFF;">
+              <p style="margin: 0 0 6px 0; color: #FFFFFF;">
+                <strong style="color: #FFFFFF;">{disclaimer_label_locked}</strong>{disclaimer_locked}
               </p>
-              <p style="margin: 0; color: #9BB3BE;">
-                產生時間：{generated_at} (台灣時間) · 本信件由快樂猛男台股早報獨立寄送以保護所有訂閱者隱私。
+              <p style="margin: 0; color: #E2ECEF;">
+                {meta_locked}
               </p>
             </div>
           </div>
@@ -1685,7 +1805,7 @@ def send_gmail_bcc(
     subject: str,
     plain_text: str,
     html_content: str,
-    inline_gifs: dict[str, bytes] | None = None,
+    inline_images: dict[str, tuple[bytes, str]] | None = None,
 ) -> None:
     """透過 Gmail SMTP SSL (Port 465) 逐一獨立寄送給每位訂閱者。
 
@@ -1718,15 +1838,15 @@ def send_gmail_bcc(
             msg.add_alternative(html_content, subtype="html")
             html_part = msg.get_payload()[1]
 
-            for cid, gif_bytes in (inline_gifs or {}).items():
-                if not gif_bytes:
+            for cid, (img_bytes, subtype) in (inline_images or {}).items():
+                if not img_bytes:
                     continue
                 html_part.add_related(
-                    gif_bytes,
+                    img_bytes,
                     maintype="image",
-                    subtype="gif",
+                    subtype=subtype,
                     cid=f"<{cid}>",
-                    filename=f"{cid}.gif",
+                    filename=f"{cid}.{subtype}",
                     disposition="inline",
                 )
 
@@ -1802,9 +1922,14 @@ def main() -> None:
     interactive_path.write_text(interactive_html, encoding="utf-8")
     print(f"🃏 已生成英倫 3D 互動翻牌網頁版：{interactive_path}")
 
+    weekday_str = f"週{WEEKDAY_ZH[now_tw.weekday()]}"
+    masthead_png_bytes = generate_masthead_png(date_str, weekday_str, config["market_focus"])
+    print(f"🖼️  已生成英倫燙金高解析主刊頭 PNG（{len(masthead_png_bytes) / 1024:.1f} KB）。")
+
     plain_text = build_plain_text(report_md, sources)
 
     if args.dry_run:
+        masthead_data_uri = "data:image/png;base64," + base64.b64encode(masthead_png_bytes).decode("ascii")
         ticker_data_uri = (
             "data:image/gif;base64," + base64.b64encode(ticker_gif_bytes).decode("ascii")
             if ticker_gif_bytes
@@ -1820,6 +1945,7 @@ def main() -> None:
             sources,
             now_tw,
             config["market_focus"],
+            masthead_img_src=masthead_data_uri,
             ticker_img_src=ticker_data_uri,
             tw_picks_img_src=tw_picks_data_uri,
             interactive_url=config["interactive_url"],
@@ -1831,15 +1957,19 @@ def main() -> None:
         print("\n" + "=" * 50 + "\n" + report_md + "\n" + "=" * 50)
         return
 
-    inline_gifs: dict[str, bytes] = {}
+    inline_images: dict[str, tuple[bytes, str]] = {
+        "masthead_banner": (masthead_png_bytes, "png"),
+    }
+    masthead_cid_src = "cid:masthead_banner"
+
     ticker_cid_src = None
     if ticker_gif_bytes:
-        inline_gifs["market_ticker_gif"] = ticker_gif_bytes
+        inline_images["market_ticker_gif"] = (ticker_gif_bytes, "gif")
         ticker_cid_src = "cid:market_ticker_gif"
 
     tw_picks_cid_src = None
     if tw_picks_gif_bytes:
-        inline_gifs["tw_picks_gif"] = tw_picks_gif_bytes
+        inline_images["tw_picks_gif"] = (tw_picks_gif_bytes, "gif")
         tw_picks_cid_src = "cid:tw_picks_gif"
 
     html_content = render_email_html(
@@ -1847,6 +1977,7 @@ def main() -> None:
         sources,
         now_tw,
         config["market_focus"],
+        masthead_img_src=masthead_cid_src,
         ticker_img_src=ticker_cid_src,
         tw_picks_img_src=tw_picks_cid_src,
         interactive_url=config["interactive_url"],
@@ -1856,7 +1987,7 @@ def main() -> None:
         subject,
         plain_text,
         html_content,
-        inline_gifs=inline_gifs,
+        inline_images=inline_images,
     )
 
 
