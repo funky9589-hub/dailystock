@@ -1228,7 +1228,7 @@ def render_email_html(
         block=False,
     )
     meta_locked = _wrap_gmail_white(
-        f"產生時間：{generated_at} (台灣時間) · 本信件由快樂猛男台股早報獨立寄送以保護所有訂閱者隱私。",
+        f"產生時間：{generated_at} (台灣時間) · 本信件由財報小貓獨立寄送以保護所有訂閱者隱私。",
         block=False,
     )
 
@@ -1826,7 +1826,7 @@ def send_gmail_bcc(
         for recipient in recipients:
             msg = EmailMessage()
             msg["Subject"] = subject
-            msg["From"] = formataddr(("快樂猛男台股早報", sender_email))
+            msg["From"] = formataddr(("財報小貓", sender_email))
             msg["To"] = recipient
             msg["Reply-To"] = sender_email
             msg["Date"] = formatdate(localtime=True)
